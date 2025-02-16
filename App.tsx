@@ -1,67 +1,57 @@
 import { StatusBar } from 'expo-status-bar';
-import { View, Text, Pressable, StyleSheet } from 'react-native';
-import { MotiView } from 'moti';
+import { StyleSheet } from 'react-native';
 import React from 'react';
+import { NavigationContainer } from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { RootStackParamList } from './src/navigation/types';
+import { HomeScreen } from './src/screens/HomeScreen';
+import { AddToCartScreen } from './src/screens/AddToCartScreen';
+import { HeartLikeScreen } from './src/screens/HeartLikeScreen';
+import { PulseScreen } from './src/screens/PulseScreen';
+
+const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function App() {
-  const [visible, setVisible] = React.useState(true);
-
   return (
-    <View style={styles.container}>
-      <Pressable onPress={() => setVisible(!visible)} style={styles.button}>
-        <Text style={styles.buttonText}>Toggle Animation</Text>
-      </Pressable>
-
-      <MotiView
-        animate={{ opacity: visible ? 1 : 0, scale: visible ? 1 : 0.5 }}
-        transition={{
-          type: 'timing',
-          duration: 500,
+    <NavigationContainer>
+      <Stack.Navigator
+        initialRouteName="Home"
+        screenOptions={{
+          headerStyle: {
+            backgroundColor: '#f5f5f5',
+          },
+          headerShadowVisible: false,
         }}
-        style={styles.animatedBox}
       >
-        <Text style={styles.text}>Welcome to Moti!</Text>
-      </MotiView>
+        <Stack.Screen
+          name="Home"
+          component={HomeScreen}
+          options={{ title: 'Animation Examples' }}
+        />
+        <Stack.Screen
+          name="AddToCart"
+          component={AddToCartScreen}
+          options={{ title: 'Add to Cart' }}
+        />
+        <Stack.Screen
+          name="HeartLike"
+          component={HeartLikeScreen}
+          options={{ title: 'Heart Like' }}
+        />
+        <Stack.Screen
+          name="Pulse"
+          component={PulseScreen}
+          options={{ title: 'Pulse' }}
+        />
+      </Stack.Navigator>
       <StatusBar style="auto" />
-    </View>
+    </NavigationContainer>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
     backgroundColor: '#f5f5f5',
-  },
-  button: {
-    backgroundColor: '#007AFF',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 8,
-    marginBottom: 20,
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  animatedBox: {
-    backgroundColor: '#fff',
-    padding: 20,
-    borderRadius: 10,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
-  },
-  text: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#333',
   },
 });
