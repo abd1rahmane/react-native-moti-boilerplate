@@ -1,16 +1,47 @@
 import React from 'react';
-import { View, StyleSheet, Text, Image, Dimensions, Pressable, StatusBar, FlatList, TouchableOpacity } from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { View, StyleSheet, Text, Image, Dimensions, Pressable, StatusBar, FlatList, TouchableOpacity, SafeAreaView } from 'react-native';
 import { MotiView } from 'moti';
 import * as Haptics from 'expo-haptics';
 import Animated, { withSpring, withTiming, runOnJS } from 'react-native-reanimated';
-import { AddToCartAnimation } from '../components/animations/AddToCartAnimation';
+import { AddToCart} from '../components/animations/AddToCartAnimation';
 import { ShakeAnimation } from '../components/animations/ShakeAnimation';
+
+const CartIcon = ({ 
+  accentColor, 
+  primaryColor, 
+  cartCount,
+  backgroundColor 
+}: { 
+  accentColor: string; 
+  primaryColor: string; 
+  cartCount: number;
+  backgroundColor: string;
+}) => (
+  <View style={[styles.cartContainer, {
+    backgroundColor: accentColor,
+    borderColor: accentColor
+  }]}>
+    <MaterialCommunityIcons name="cart" size={32} color={primaryColor} style={styles.cartIcon} />
+    {cartCount > 0 && (
+      <MotiView
+        from={{ scale: 0, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ type: 'spring', damping: 15 }}
+        style={[styles.badge, { backgroundColor: accentColor, borderColor: primaryColor }]}
+      >
+        <Text style={[styles.badgeText, { color: backgroundColor }]}>{cartCount}</Text>
+      </MotiView>
+    )}
+  </View>
+);
 
 const COLORS = {
   orange: '#FF6B00',
   backgrounds: [
-    { primary: '#FFFFFF', accent: '#000000' },  // White bg for black sneaker
     { primary: '#1E1E1E', accent: '#FFFFFF' },  // Black bg for white sneaker
+    { primary: '#FFFFFF', accent: '#000000' },  // White bg for black sneaker
+
     { primary: '#FFD700', accent: '#4169E1' }   // Gold bg for blue sneaker
   ]
 };
@@ -20,15 +51,15 @@ const { width, height } = Dimensions.get('window');
 const SNEAKER_IMAGES = [
   {
     id: '1',
-    uri: 'https://www.pngarts.com/files/8/Nike-Air-Force-One-PNG-Download-Image.png',
-    title: 'Nike Air Force 1 Black',
-    price: 179.99,
-  },
-  {
-    id: '2',
     uri: 'https://www.pngarts.com/files/8/Air-Force-One-White-Nike-Shoes-Transparent-Images.png',
     title: 'Nike Air Force 1 White',
     price: 159.99,
+  },
+  {
+    id: '2',
+    uri: 'https://www.pngarts.com/files/8/Nike-Air-Force-One-PNG-Download-Image.png',
+    title: 'Nike Air Force 1 Black',
+    price: 179.99,
   },
   {
     id: '3',
@@ -48,9 +79,12 @@ export const AddToCartScreen = () => {
   const [buttonPressed, setButtonPressed] = React.useState(false);
   const [showSuccessRing, setShowSuccessRing] = React.useState(false);
   const [showImageAnimation, setShowImageAnimation] = React.useState(false);
+  const [selectedSize, setSelectedSize] = React.useState<string | null>(null);
+
+  const SIZES = ['US 7', 'US 8', 'US 9', 'US 10', 'US 11'];
 
   const handleAddToCart = async () => {
-    if (isAnimating) return;
+    if (isAnimating || !selectedSize) return;
     
     // Trigger haptic feedback
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -153,20 +187,44 @@ export const AddToCartScreen = () => {
         ))}
       </View>
       
-      <MotiView 
-        animate={{
-          translateX: [-20, 0],
-          opacity: [0, 1]
-        }}
-        transition={{
-          type: 'timing',
-          duration: 300,
-        }}
-        style={styles.productInfo}
-      >
-        <Text style={[styles.productTitle, { color: accentColor }]}>{SNEAKER_IMAGES[activeIndex].title}</Text>
-        <Text style={[styles.productPrice, { color: accentColor }]}>${SNEAKER_IMAGES[activeIndex].price}</Text>
-      </MotiView>
+      <View style={styles.productInfo}>
+        <MotiView 
+          animate={{
+            translateX: [-20, 0],
+            opacity: [0, 1]
+          }}
+          transition={{
+            type: 'timing',
+            duration: 300,
+          }}
+        >
+          <Text style={[styles.productTitle, { color: accentColor }]}>{SNEAKER_IMAGES[activeIndex].title}</Text>
+          <Text style={[styles.productPrice, { color: accentColor }]}>${SNEAKER_IMAGES[activeIndex].price}</Text>
+        </MotiView>
+
+        <View style={styles.sizesContainer}>
+        <Text style={[styles.sizeTitle, { color: accentColor }]}>Select Size</Text>
+        <View style={styles.sizeButtons}>
+          {SIZES.map((size) => (
+            <TouchableOpacity
+              key={size}
+              style={[
+                styles.sizeButton,
+                { borderColor: accentColor },
+                selectedSize === size && { backgroundColor: accentColor }
+              ]}
+              onPress={() => setSelectedSize(size)}
+            >
+              <Text style={[
+                styles.sizeButtonText,
+                { color: accentColor },
+                selectedSize === size && { color: backgroundColor }
+              ]}>{size}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+        </View>
+      </View>
 
       <MotiView
         animate={{
@@ -180,8 +238,10 @@ export const AddToCartScreen = () => {
       >
         <Pressable 
           style={[styles.addButton, {
-          backgroundColor: accentColor
-        }, buttonPressed && styles.addButtonPressed]}
+            backgroundColor: selectedSize ? accentColor : '#ccc',
+            opacity: selectedSize ? 1 : 0.7
+          }, buttonPressed && styles.addButtonPressed]}
+          disabled={!selectedSize}
           onPress={handleAddToCart}
         >
         <Text style={[styles.buttonText, { color: backgroundColor }]}>Add to Cart</Text>
@@ -242,26 +302,42 @@ export const AddToCartScreen = () => {
         </>
       )}
 
-      <View style={[styles.cartContainer, {
-        borderColor: accentColor
-      }]}>
-        <Text style={styles.cartIcon}>🛍️</Text>
-        {cartCount > 0 && (
-          <MotiView
-            from={{ scale: 0, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ type: 'spring', damping: 15 }}
-            style={styles.badge}
-          >
-            <Text style={styles.badgeText}>{cartCount}</Text>
-          </MotiView>
-        )}
-      </View>
+      <CartIcon 
+        accentColor={accentColor}
+        primaryColor={COLORS.backgrounds[activeIndex].primary}
+        cartCount={cartCount}
+        backgroundColor={backgroundColor}
+      />
     </MotiView>
   );
 };
 
 const styles = StyleSheet.create({
+  sizesContainer: {
+    marginTop: 20,
+  },
+  sizeTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 10,
+  },
+  sizeButtons: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  sizeButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+    minWidth: 70,
+    alignItems: 'center',
+  },
+  sizeButtonText: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
   pagination: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -303,18 +379,17 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    paddingBottom: 20,
   },
   productImageContainer: {
     width: width,
-    height: height * 0.45,
-    paddingTop: height * 0.05,
+    height: height * 0.6,
     alignItems: 'center',
     justifyContent: 'center',
+    paddingHorizontal: 40,
   },
   productImage: {
-    width: width * 0.85,
-    height: height * 0.35,
+    width: width * 0.8,
+    height: height * 0.45,
     transform: [{ scale: 1.3 }],
   },
   productInfo: {
@@ -375,24 +450,23 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   cartIcon: {
-    fontSize: 24,
+    marginHorizontal: 12,
+    marginVertical: 8,
   },
   badge: {
     position: 'absolute',
-    top: -6,
-    right: -6,
-    backgroundColor: COLORS.backgrounds[0].accent,
-    width: 22,
-    height: 22,
-    borderRadius: 11,
+    top: -5,
+    right: -5,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
     borderColor: '#fff',
   },
   badgeText: {
-    color: '#fff',
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: '600',
   }
 });
