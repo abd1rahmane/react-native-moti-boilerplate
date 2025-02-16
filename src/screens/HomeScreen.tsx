@@ -1,9 +1,9 @@
-import { StatusBar } from 'expo-status-bar';
-import { View, Text, Pressable, StyleSheet } from 'react-native';
-import { MotiView } from 'moti';
 import React from 'react';
+import { StyleSheet, View, Text, Pressable } from 'react-native';
+import { MotiView } from '@motify/components';
+import { FadeInView } from '../components/FadeInView';
 
-export default function App() {
+export const HomeScreen = () => {
   const [visible, setVisible] = React.useState(true);
 
   return (
@@ -12,20 +12,28 @@ export default function App() {
         <Text style={styles.buttonText}>Toggle Animation</Text>
       </Pressable>
 
-      <MotiView
-        animate={{ opacity: visible ? 1 : 0, scale: visible ? 1 : 0.5 }}
-        transition={{
-          type: 'timing',
-          duration: 500,
-        }}
-        style={styles.animatedBox}
-      >
-        <Text style={styles.text}>Welcome to Moti!</Text>
-      </MotiView>
-      <StatusBar style="auto" />
+      {visible && (
+        <FadeInView>
+          <MotiView
+            from={{
+              translateY: -20,
+            }}
+            animate={{
+              translateY: 0,
+            }}
+            transition={{
+              type: 'spring',
+              damping: 10,
+            }}
+            style={styles.content}
+          >
+            <Text style={styles.text}>Welcome to Moti Boilerplate!</Text>
+          </MotiView>
+        </FadeInView>
+      )}
     </View>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {
@@ -46,7 +54,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
-  animatedBox: {
+  content: {
     backgroundColor: '#fff',
     padding: 20,
     borderRadius: 10,
