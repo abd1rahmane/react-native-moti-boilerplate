@@ -1,6 +1,6 @@
 import React from 'react';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { View, StyleSheet, Text, Image, Dimensions, Pressable, StatusBar, FlatList, TouchableOpacity, SafeAreaView } from 'react-native';
+import { View, StyleSheet, Text, Image, Dimensions, Pressable, StatusBar, FlatList, TouchableOpacity, SafeAreaView, Modal } from 'react-native';
 import { MotiView } from 'moti';
 import * as Haptics from 'expo-haptics';
 import Animated, { withSpring, withTiming, runOnJS } from 'react-native-reanimated';
@@ -11,17 +11,21 @@ const CartIcon = ({
   accentColor, 
   primaryColor, 
   cartCount,
-  backgroundColor 
+  backgroundColor,
+  onPress
 }: { 
   accentColor: string; 
   primaryColor: string; 
   cartCount: number;
   backgroundColor: string;
+  onPress: () => void;
 }) => (
-  <View style={[styles.cartContainer, {
-    backgroundColor: accentColor,
-    borderColor: accentColor
-  }]}>
+  <TouchableOpacity 
+    onPress={onPress}
+    style={[styles.cartContainer, {
+      backgroundColor: accentColor,
+      borderColor: accentColor
+    }]}>
     <MaterialCommunityIcons name="cart" size={32} color={primaryColor} style={styles.cartIcon} />
     {cartCount > 0 && (
       <MotiView
@@ -33,7 +37,7 @@ const CartIcon = ({
         <Text style={[styles.badgeText, { color: backgroundColor }]}>{cartCount}</Text>
       </MotiView>
     )}
-  </View>
+  </TouchableOpacity>
 );
 
 const COLORS = {
@@ -80,6 +84,9 @@ export const AddToCartScreen = () => {
   const [showSuccessRing, setShowSuccessRing] = React.useState(false);
   const [showImageAnimation, setShowImageAnimation] = React.useState(false);
   const [selectedSize, setSelectedSize] = React.useState<string | null>(null);
+  const [showCheckout, setShowCheckout] = React.useState(false);
+  const [quantity, setQuantity] = React.useState(1);
+  const [isFavorite, setIsFavorite] = React.useState(false);
 
   const SIZES = ['US 7', 'US 8', 'US 9', 'US 10', 'US 11'];
 
@@ -198,8 +205,26 @@ export const AddToCartScreen = () => {
             duration: 300,
           }}
         >
-          <Text style={[styles.productTitle, { color: accentColor }]}>{SNEAKER_IMAGES[activeIndex].title}</Text>
-          <Text style={[styles.productPrice, { color: accentColor }]}>${SNEAKER_IMAGES[activeIndex].price}</Text>
+          <View style={styles.titleRow}>
+            <View style={styles.titleContainer}>
+              <Text style={[styles.productTitle, { color: accentColor }]}>{SNEAKER_IMAGES[activeIndex].title}</Text>
+              <Text style={[styles.productPrice, { color: accentColor }]}>${SNEAKER_IMAGES[activeIndex].price}</Text>
+            </View>
+            <TouchableOpacity 
+              style={[styles.favoriteButton, { borderColor: accentColor }]}
+              onPress={() => setIsFavorite(!isFavorite)}
+            >
+              <MaterialCommunityIcons 
+                name={isFavorite ? 'heart' : 'heart-outline'} 
+                size={24} 
+                color={accentColor} 
+              />
+            </TouchableOpacity>
+          </View>
+          
+          <Text style={[styles.description, { color: accentColor }]}>
+            Premium comfort meets iconic style. These Nike Air Force 1s feature durable leather, classic design, and Air cushioning.
+          </Text>
         </MotiView>
 
         <View style={styles.sizesContainer}>
@@ -307,19 +332,250 @@ export const AddToCartScreen = () => {
         primaryColor={COLORS.backgrounds[activeIndex].primary}
         cartCount={cartCount}
         backgroundColor={backgroundColor}
+        onPress={() => setShowCheckout(true)}
       />
+
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={showCheckout}
+        onRequestClose={() => setShowCheckout(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <MotiView 
+            from={{ 
+              translateY: 1000,
+              opacity: 0 
+            }}
+            animate={{ 
+              translateY: 0,
+              opacity: 1 
+            }}
+            transition={{ 
+              type: 'spring',
+              damping: 20
+            }}
+            style={[styles.modalContent, { backgroundColor }]}>
+            <View style={styles.modalHeader}>
+              <Text style={[styles.modalTitle, { color: accentColor }]}>Your Cart</Text>
+              <MotiView
+                from={{ rotate: '0deg', scale: 0.5 }}
+                animate={{ rotate: '360deg', scale: 1 }}
+                transition={{ type: 'timing', duration: 350 }}
+              >
+                <TouchableOpacity 
+                  style={[styles.closeButton, { backgroundColor: accentColor }]} 
+                  onPress={() => setShowCheckout(false)}
+                >
+                  <MaterialCommunityIcons name="close" size={22} color={backgroundColor} />
+                </TouchableOpacity>
+              </MotiView>
+            </View>
+            
+            <View style={styles.cartItems}>
+              <View style={[styles.cartItem, { borderColor: accentColor }]}>
+                <Image 
+                  source={{ uri: SNEAKER_IMAGES[activeIndex].uri }}
+                  style={styles.cartItemImage}
+                  resizeMode="contain"
+                />
+                <View style={styles.cartItemInfo}>
+                  <Text style={[styles.cartItemTitle, { color: accentColor }]}>{SNEAKER_IMAGES[activeIndex].title}</Text>
+                  <Text style={[styles.cartItemSize, { color: accentColor }]}>Size: {selectedSize}</Text>
+                  <View style={styles.quantityContainer}>
+                    <TouchableOpacity 
+                      style={[styles.quantityButton, { borderColor: accentColor }]}
+                      onPress={() => quantity > 1 && setQuantity(q => q - 1)}
+                    >
+                      <Text style={[styles.quantityButtonText, { color: accentColor }]}>-</Text>
+                    </TouchableOpacity>
+                    <Text style={[styles.quantity, { color: accentColor }]}>{quantity}</Text>
+                    <TouchableOpacity 
+                      style={[styles.quantityButton, { borderColor: accentColor }]}
+                      onPress={() => setQuantity(q => q + 1)}
+                    >
+                      <Text style={[styles.quantityButtonText, { color: accentColor }]}>+</Text>
+                    </TouchableOpacity>
+                  </View>
+                  <Text style={[styles.cartItemPrice, { color: accentColor }]}>${(SNEAKER_IMAGES[activeIndex].price * quantity).toFixed(2)}</Text>
+                </View>
+              </View>
+            </View>
+
+            <TouchableOpacity 
+              style={[styles.checkoutButton, { backgroundColor: accentColor }]}
+              onPress={() => {
+                setShowCheckout(false);
+                setCartCount(0);
+              }}
+            >
+              <Text style={[styles.checkoutButtonText, { color: backgroundColor }]}>Proceed to Payment</Text>
+            </TouchableOpacity>
+          </MotiView>
+        </View>
+      </Modal>
     </MotiView>
   );
 };
 
 const styles = StyleSheet.create({
-  sizesContainer: {
-    marginTop: 20,
+  titleRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 8,
   },
-  sizeTitle: {
+  titleContainer: {
+    flex: 1,
+    marginRight: 16,
+  },
+  favoriteButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  description: {
+    fontSize: 13,
+    lineHeight: 18,
+    marginBottom: 16,
+    opacity: 0.8,
+  },
+  quantityContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 8,
+  },
+  quantityButton: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  quantityButtonText: {
     fontSize: 16,
     fontWeight: '600',
-    marginBottom: 10,
+  },
+  quantity: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginHorizontal: 12,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
+    padding: 24,
+    minHeight: height * 0.7,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: -4,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 5,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  modalTitle: {
+    fontSize: 28,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+  },
+  closeButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  cartItems: {
+    flex: 1,
+  },
+  cartItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 20,
+    borderRadius: 20,
+    borderWidth: 1.5,
+    marginBottom: 15,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  cartItemImage: {
+    width: 80,
+    height: 80,
+    marginRight: 15,
+  },
+  cartItemInfo: {
+    flex: 1,
+  },
+  cartItemTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  cartItemSize: {
+    fontSize: 14,
+    marginBottom: 4,
+  },
+  cartItemPrice: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  checkoutButton: {
+    padding: 18,
+    borderRadius: 16,
+    alignItems: 'center',
+    marginTop: 20,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  checkoutButtonText: {
+    fontSize: 18,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+  },
+  sizesContainer: {
+    marginTop: 12,
+  },
+  sizeTitle: {
+    fontSize: 15,
+    fontWeight: '600',
+    marginBottom: 8,
   },
   sizeButtons: {
     flexDirection: 'row',
@@ -382,14 +638,15 @@ const styles = StyleSheet.create({
   },
   productImageContainer: {
     width: width,
-    height: height * 0.6,
+    height: height * 0.5,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 40,
+    paddingHorizontal: 30,
+    marginTop: -40,
   },
   productImage: {
     width: width * 0.8,
-    height: height * 0.45,
+    height: height * 0.4,
     transform: [{ scale: 1.3 }],
   },
   productInfo: {
@@ -397,10 +654,10 @@ const styles = StyleSheet.create({
     paddingTop: 5,
   },
   productTitle: {
-    fontSize: 28,
+    fontSize: 26,
     fontWeight: '600',
     color: '#fff',
-    marginBottom: 8,
+    marginBottom: 6,
     textShadowColor: 'rgba(0, 0, 0, 0.2)',
     textShadowOffset: { width: 0, height: 2 },
     textShadowRadius: 4,
