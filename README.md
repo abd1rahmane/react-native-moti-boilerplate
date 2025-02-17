@@ -2,6 +2,8 @@
 
 A modern, production-ready boilerplate for React Native applications using Expo and Moti animation framework.
 
+<img src="documentation/Simulator%20Screenshot%20-%20iPhone%2015%20-%202025-02-17%20at%2000.25.32.png" width="50%" alt="App Screenshot">
+
 ## Features
 
 - 🚀 Latest Expo SDK
